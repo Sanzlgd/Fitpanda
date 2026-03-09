@@ -16,6 +16,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Install NPM Dependencies
         run: npm install
@@ -23,21 +24,30 @@ jobs:
       - name: Build React/Vite App
         run: npm run build
 
-      - name: Sync Capacitor
-        run: npx cap sync android
-
       - name: Set up Java JDK
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Sync Capacitor & Android
+        run: |
+          # If the android folder is missing, this adds it
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          npx cap sync android
 
       - name: Build APK with Gradle
-        working-directory: ./android
-        run: bash ./gradlew assembleDebug
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
           name: FitPanda-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 5
