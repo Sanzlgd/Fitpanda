@@ -2,12 +2,11 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 import { useAuth } from './AuthContext'
 import { snoozeReminderToTomorrow } from '../utils/notifications'
 
-const API_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:5000/api') + '/diet'
 
 const DietContext = createContext(null)
 
 export function DietProvider({ children }) {
-    const { isAuthenticated } = useAuth()
+    const { isAuthenticated, user } = useAuth()
 
     const [todayLogs, setTodayLogs] = useState([])
     const [totals, setTotals] = useState({ calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 })
