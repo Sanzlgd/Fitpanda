@@ -63,14 +63,6 @@ export default function Dashboard() {
                     <span className="nav-logo-text">FitPanda</span>
                 </div>
                 <div className="nav-actions">
-                    <Link to="/settings" className="nav-settings-btn" id="go-to-settings-link">
-                        <span>⚙</span>
-                        <span>Settings</span>
-                    </Link>
-                    <Link to="/diet" className="nav-settings-btn" id="go-to-diet-link">
-                        <span>🥗</span>
-                        <span>Diet</span>
-                    </Link>
                     <div className="nav-avatar" title={user?.name}>{initials}</div>
                 </div>
             </nav>

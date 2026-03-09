@@ -30,10 +30,6 @@ export default function Settings() {
                     <span className="nav-logo-icon">🐼</span>
                     <span className="nav-logo-text">FitPanda</span>
                 </div>
-                <Link to="/dashboard" className="nav-settings-btn" id="back-to-dashboard-link">
-                    <span>←</span>
-                    <span>Dashboard</span>
-                </Link>
             </nav>
 
             <main className="settings-main">

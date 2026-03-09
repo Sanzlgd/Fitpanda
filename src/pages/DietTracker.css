@@ -89,8 +89,8 @@
 .dt-main {
     position: relative;
     z-index: 1;
-    padding: 1rem 1rem 9rem;
-    /* 9rem to clear the sticky bottom bar */
+    padding: 1rem 1rem 12rem;
+    /* 12rem clear the sticky goal bar AND bottom nav */
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
@@ -610,19 +610,18 @@
 /* ─── STICKY BOTTOM GOAL BAR ──────────────────────────── */
 .goal-bottom-bar {
     position: fixed;
-    bottom: 0;
+    bottom: calc(60px + env(safe-area-inset-bottom));
     left: 0;
     right: 0;
     z-index: 100;
     background: rgba(15, 15, 20, 0.95);
     backdrop-filter: blur(24px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 1rem 1.25rem;
+    padding: 0.75rem 1.25rem;
     display: flex;
     align-items: center;
     gap: 1rem;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.4);
 }
 
 .goal-bar-left {

@@ -21,6 +21,10 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install
 
+      - name: Inject API Variables
+        run: |
+          echo "VITE_GITHUB_TOKEN=${{ secrets.VITE_GITHUB_TOKEN }}" > .env
+
       - name: Build React/Vite App
         run: npm run build
 

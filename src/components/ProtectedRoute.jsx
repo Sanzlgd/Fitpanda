@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import BottomNav from './BottomNav'
 
 export default function ProtectedRoute({ children }) {
     const { isAuthenticated, isLoading } = useAuth()
@@ -18,5 +19,14 @@ export default function ProtectedRoute({ children }) {
         )
     }
 
-    return isAuthenticated ? children : <Navigate to="/login" replace />
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />
+    }
+
+    return (
+        <>
+            {children}
+            <BottomNav />
+        </>
+    )
 }

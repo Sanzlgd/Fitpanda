@@ -142,7 +142,6 @@ export default function DietTracker() {
                     <span className="nav-logo-text">FitPanda</span>
                 </div>
                 <div className="nav-actions">
-                    <Link to="/dashboard" className="nav-back-btn" id="back-to-dashboard">🏠 Home</Link>
                     <div className="nav-avatar">{initials}</div>
                 </div>
             </nav>
