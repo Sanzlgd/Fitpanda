@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FitPanda</string>
+    <string name="title_activity_main">FitPanda</string>
+    <string name="package_name">com.fitpanda.app</string>
+    <string name="custom_url_scheme">com.fitpanda.app</string>
+</resources>

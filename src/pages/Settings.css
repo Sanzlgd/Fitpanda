@@ -1,0 +1,167 @@
+/* Settings page — imports shared nav styles from Dashboard.css via props */
+.settings-page {
+    min-height: 100vh;
+    background: var(--color-bg);
+    position: relative;
+}
+
+.settings-bg {
+    position: fixed;
+    inset: 0;
+    background: var(--gradient-bg);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.settings-main {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: var(--space-3xl) var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+/* Page header */
+.settings-header {
+    margin-bottom: var(--space-md);
+}
+
+.settings-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: var(--space-xs);
+}
+
+.settings-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+/* Card */
+.settings-card {
+    background: linear-gradient(145deg, rgba(28, 28, 40, .85), rgba(19, 19, 26, .9));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    backdrop-filter: blur(10px);
+    animation: fadeUp .35s ease;
+}
+
+.settings-card-danger {
+    border-color: rgba(239, 68, 68, .25);
+    background: linear-gradient(145deg, rgba(40, 20, 20, .85), rgba(26, 13, 13, .9));
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.settings-section-label {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--color-text-subtle);
+    margin-bottom: var(--space-lg);
+}
+
+.settings-section-danger {
+    color: rgba(239, 68, 68, .7);
+}
+
+/* Profile row */
+.profile-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+}
+
+.profile-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--gradient-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, .3), var(--shadow-md);
+}
+
+.profile-name {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.profile-email {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: 4px;
+}
+
+.profile-joined {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-subtle);
+}
+
+/* Settings items */
+.settings-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+}
+
+.settings-item-info {
+    flex: 1;
+}
+
+.settings-item-title {
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.settings-item-desc {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.settings-item-btn {
+    width: auto;
+    padding: 9px var(--space-lg);
+    font-size: var(--font-size-sm);
+    flex-shrink: 0;
+}
+
+.settings-divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: var(--space-lg) 0;
+}
+
+/* Version */
+.settings-version {
+    font-size: 11px;
+    color: var(--color-text-subtle);
+    text-align: center;
+    margin-top: var(--space-sm);
+}
