@@ -5,8 +5,7 @@ import { useDiet } from '../context/DietContext'
 import { INDIAN_FOODS, MEAL_TYPES } from '../data/indianFoods'
 import './DietTracker.css'
 
-// Food categories to show in the picker
-const CATEGORIES = ['All', 'Breakfast', 'Main', 'Dal', 'Curry', 'Snack', 'Dessert', 'Drink', 'Dairy', 'Protein', 'Starter']
+const CATEGORIES = ['All', 'Breakfast', 'Main', 'Dal', 'Curry', 'Non-Veg', 'Starter', 'Snack', 'Dessert', 'Drink', 'Protein', 'Fruit']
 
 export default function DietTracker() {
     const { user, profile, dynamicTargets } = useAuth()
@@ -15,11 +14,10 @@ export default function DietTracker() {
     const [activeMeal, setActiveMeal] = useState('Breakfast')
     const [activeCategory, setActiveCategory] = useState('All')
     const [search, setSearch] = useState('')
-
-    // Quantity picker modal state
     const [selectedFood, setSelectedFood] = useState(null)
     const [quantity, setQuantity] = useState(1)
     const [isLogging, setIsLogging] = useState(false)
+    const [isScanning, setIsScanning] = useState(false)
     const [logError, setLogError] = useState('')
 
     const initials = user?.name
@@ -40,7 +38,7 @@ export default function DietTracker() {
             const catMatch = activeCategory === 'All' || f.category === activeCategory
             const searchMatch = !q || f.name.toLowerCase().includes(q)
             return catMatch && searchMatch
-        }).slice(0, 30)
+        }).slice(0, 40)
     }, [search, activeCategory])
 
     // ── Logs grouped by meal ──────────────────────────────────────
@@ -51,7 +49,7 @@ export default function DietTracker() {
         return g
     }, [todayLogs])
 
-    // Quick preview for the qty modal
+    // ── Quick preview for qty modal ──────────────────────────────
     const preview = selectedFood ? {
         calories: Math.round(selectedFood.calories * quantity),
         protein_g: +(selectedFood.protein_g * quantity).toFixed(1),
@@ -81,7 +79,7 @@ export default function DietTracker() {
                 food_id: selectedFood.id,
                 food_name: selectedFood.name,
                 serving: selectedFood.serving,
-                quantity: quantity,
+                quantity,
                 calories: selectedFood.calories,
                 protein_g: selectedFood.protein_g,
                 carbs_g: selectedFood.carbs_g,
@@ -95,11 +93,49 @@ export default function DietTracker() {
         }
     }
 
+    // ── AI Camera scan ─────────────────────────────────────────────
+    async function handleSnapMeal() {
+        setIsScanning(true)
+        setLogError('')
+        try {
+            const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera')
+            const { analyzeFoodImage } = await import('../utils/aiScanner')
+
+            const image = await Camera.getPhoto({
+                quality: 60,
+                allowEditing: false,
+                resultType: CameraResultType.Base64,
+                source: CameraSource.Camera,
+            })
+
+            if (image.base64String) {
+                const aiResult = await analyzeFoodImage(image.base64String)
+                await logFood({
+                    meal_type: activeMeal,
+                    food_id: 'ai-' + Date.now(),
+                    food_name: '✨ ' + aiResult.name,
+                    serving: '1 serving (AI estimate)',
+                    quantity: 1,
+                    calories: aiResult.calories,
+                    protein_g: aiResult.protein_g,
+                    carbs_g: aiResult.carbs_g,
+                    fat_g: aiResult.fat_g,
+                })
+            }
+        } catch (err) {
+            if (err?.message !== 'User cancelled photos app') {
+                setLogError('AI Scan failed: ' + (err?.message || 'Check camera permissions / API key.'))
+            }
+        } finally {
+            setIsScanning(false)
+        }
+    }
+
     return (
         <div className="diet-page">
             <div className="diet-bg" />
 
-            {/* Nav */}
+            {/* ── Nav ───────────────────────────────────────────────── */}
             <nav className="dt-nav">
                 <div className="nav-logo">
                     <span className="nav-logo-icon">🐼</span>
@@ -111,54 +147,10 @@ export default function DietTracker() {
                 </div>
             </nav>
 
+            {/* ── Scrollable main content ────────────────────────────── */}
             <main className="dt-main">
 
-                {/* ── TODAY'S GOAL BANNER ──────────────────────────── */}
-                <div className="goal-banner">
-                    <div className="goal-banner-top">
-                        <div className="goal-info">
-                            <p className="goal-label">Today's Goal</p>
-                            <p className="goal-numbers">
-                                <span className="goal-eaten">{netCalories.toLocaleString()}</span>
-                                <span className="goal-sep"> / </span>
-                                <span className="goal-total">{calorieLimit.toLocaleString()} kcal</span>
-                            </p>
-                        </div>
-                        <div className={`goal-remaining-badge ${isOver ? 'over' : ''}`}>
-                            <p className="goal-rem-label">{isOver ? 'Over' : 'Remaining'}</p>
-                            <p className="goal-rem-val">{Math.abs(remaining).toLocaleString()} kcal</p>
-                        </div>
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="goal-bar-track">
-                        <div
-                            className={`goal-bar-fill ${isOver ? 'over' : caloriePct > 85 ? 'warn' : ''}`}
-                            style={{ width: `${caloriePct}%` }}
-                        />
-                    </div>
-
-                    {/* Macro chips */}
-                    <div className="goal-macros">
-                        <div className="macro-chip">
-                            <span className="macro-emoji">💪</span>
-                            <span className="macro-val">{totals.protein_g}g</span>
-                            <span className="macro-key">Protein</span>
-                        </div>
-                        <div className="macro-chip">
-                            <span className="macro-emoji">⚡</span>
-                            <span className="macro-val">{totals.carbs_g}g</span>
-                            <span className="macro-key">Carbs</span>
-                        </div>
-                        <div className="macro-chip">
-                            <span className="macro-emoji">🔥</span>
-                            <span className="macro-val">{totals.fat_g}g</span>
-                            <span className="macro-key">Fat</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── MEAL TYPE TABS ──────────────────────────────── */}
+                {/* ── Meal type tabs ─────────────────────────────────── */}
                 <div className="meal-tabs">
                     {MEAL_TYPES.map(m => (
                         <button
@@ -171,7 +163,7 @@ export default function DietTracker() {
                     ))}
                 </div>
 
-                {/* ── FOOD PICKER ─────────────────────────────────── */}
+                {/* ── Food picker ─────────────────────────────────────── */}
                 <div className="food-picker-section">
                     <p className="section-title">Add Food to {activeMeal}</p>
 
@@ -181,7 +173,7 @@ export default function DietTracker() {
                         <input
                             className="food-search-input"
                             type="text"
-                            placeholder="Search foods..."
+                            placeholder="Search foods…"
                             value={search}
                             onChange={e => { setSearch(e.target.value); setActiveCategory('All') }}
                         />
@@ -204,11 +196,7 @@ export default function DietTracker() {
                     {/* Food cards grid */}
                     <div className="food-cards-grid">
                         {filtered.map(food => (
-                            <button
-                                key={food.id}
-                                className="food-card"
-                                onClick={() => openFoodPicker(food)}
-                            >
+                            <button key={food.id} className="food-card" onClick={() => openFoodPicker(food)}>
                                 <span className="food-card-emoji">{food.emoji}</span>
                                 <span className="food-card-name">{food.name}</span>
                                 <span className="food-card-cal">{food.calories} kcal</span>
@@ -219,7 +207,7 @@ export default function DietTracker() {
                     </div>
                 </div>
 
-                {/* ── TODAY'S LOG ─────────────────────────────────── */}
+                {/* ── Today's log ─────────────────────────────────────── */}
                 <div className="todays-log-section">
                     <p className="section-title">Today's Log</p>
                     {MEAL_TYPES.map(m => {
@@ -236,23 +224,58 @@ export default function DietTracker() {
                                             <span className="log-name">{log.food_name}</span>
                                             <span className="log-meta">×{log.quantity} · {Math.round(log.calories * log.quantity)} kcal</span>
                                         </div>
-                                        <button
-                                            className="log-delete-btn"
-                                            onClick={() => deleteLog(log.id)}
-                                            title="Remove"
-                                        >✕</button>
+                                        <button className="log-delete-btn" onClick={() => deleteLog(log.id)}>✕</button>
                                     </div>
                                 ))}
                             </div>
                         )
                     })}
                     {todayLogs.length === 0 && (
-                        <p className="empty-log-msg">No food logged yet today. Tap a food card above to add! 🍽️</p>
+                        <p className="empty-log-msg">No food logged yet today. Pick a food card above! 🍽️</p>
                     )}
                 </div>
+
+                {/* Error (e.g. scan failure) */}
+                {logError && <div className="scan-error">⚠ {logError}</div>}
             </main>
 
-            {/* ── QUANTITY PICKER MODAL ───────────────────────────── */}
+            {/* ── STICKY BOTTOM GOAL BAR ─────────────────────────────── */}
+            <div className="goal-bottom-bar">
+                <div className="goal-bar-left">
+                    <p className="gbb-label">Today's Goal</p>
+                    <p className="gbb-numbers">
+                        <span className="gbb-eaten">{netCalories.toLocaleString()}</span>
+                        <span className="gbb-sep"> / </span>
+                        <span className="gbb-total">{calorieLimit.toLocaleString()} kcal</span>
+                    </p>
+                    {/* Mini progress bar */}
+                    <div className="gbb-bar-track">
+                        <div
+                            className={`gbb-bar-fill ${isOver ? 'over' : caloriePct > 85 ? 'warn' : ''}`}
+                            style={{ width: `${caloriePct}%` }}
+                        />
+                    </div>
+                </div>
+
+                {/* Remaining badge */}
+                <div className={`gbb-remaining ${isOver ? 'over' : ''}`}>
+                    <p className="gbb-rem-label">{isOver ? 'Over' : 'Left'}</p>
+                    <p className="gbb-rem-val">{Math.abs(remaining).toLocaleString()}</p>
+                    <p className="gbb-rem-unit">kcal</p>
+                </div>
+
+                {/* Camera scan button */}
+                <button
+                    className={`gbb-cam-btn ${isScanning ? 'scanning' : ''}`}
+                    onClick={handleSnapMeal}
+                    disabled={isScanning}
+                    title="Snap Meal — AI will identify it"
+                >
+                    {isScanning ? '⏳' : '📸'}
+                </button>
+            </div>
+
+            {/* ── QUANTITY PICKER MODAL ──────────────────────────────── */}
             {selectedFood && (
                 <div className="qty-overlay" onClick={closePicker}>
                     <div className="qty-modal" onClick={e => e.stopPropagation()}>
@@ -260,12 +283,9 @@ export default function DietTracker() {
                         <p className="qty-modal-name">{selectedFood.name}</p>
                         <p className="qty-modal-serving">per {selectedFood.serving}</p>
 
-                        {/* Quantity stepper */}
+                        {/* Stepper */}
                         <div className="qty-stepper">
-                            <button
-                                className="qty-btn"
-                                onClick={() => setQuantity(q => Math.max(0.5, q - (q > 1 ? 1 : 0.5)))}
-                            >−</button>
+                            <button className="qty-btn" onClick={() => setQuantity(q => Math.max(0.5, +(q - (q > 1 ? 1 : 0.5)).toFixed(1)))}>−</button>
                             <input
                                 className="qty-input"
                                 type="number"
@@ -274,10 +294,7 @@ export default function DietTracker() {
                                 value={quantity}
                                 onChange={e => setQuantity(Math.max(0.5, parseFloat(e.target.value) || 1))}
                             />
-                            <button
-                                className="qty-btn"
-                                onClick={() => setQuantity(q => q + 1)}
-                            >+</button>
+                            <button className="qty-btn" onClick={() => setQuantity(q => q + 1)}>+</button>
                         </div>
 
                         {/* Live preview */}
@@ -285,12 +302,12 @@ export default function DietTracker() {
                             <div className="qty-preview">
                                 <div className="qty-preview-big">{preview.calories} kcal</div>
                                 <div className="qty-preview-macros">
-                                    <span>💪 {preview.protein_g}g protein</span>
-                                    <span>⚡ {preview.carbs_g}g carbs</span>
-                                    <span>🔥 {preview.fat_g}g fat</span>
+                                    <span>💪 {preview.protein_g}g</span>
+                                    <span>⚡ {preview.carbs_g}g</span>
+                                    <span>🔥 {preview.fat_g}g</span>
                                 </div>
                                 <div className="qty-remaining-preview">
-                                    <span>Remaining after this: </span>
+                                    Remaining after this:{' '}
                                     <strong className={remaining - preview.calories < 0 ? 'over-text' : ''}>
                                         {(remaining - preview.calories).toLocaleString()} kcal
                                     </strong>
@@ -302,11 +319,7 @@ export default function DietTracker() {
 
                         <div className="qty-modal-actions">
                             <button className="qty-cancel-btn" onClick={closePicker}>Cancel</button>
-                            <button
-                                className="qty-confirm-btn"
-                                onClick={confirmLog}
-                                disabled={isLogging}
-                            >
+                            <button className="qty-confirm-btn" onClick={confirmLog} disabled={isLogging}>
                                 {isLogging ? 'Adding…' : `Add to ${activeMeal}`}
                             </button>
                         </div>
