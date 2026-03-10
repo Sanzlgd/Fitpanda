@@ -20,6 +20,11 @@ export default function DietTracker() {
     const [isScanning, setIsScanning] = useState(false)
     const [logError, setLogError] = useState('')
 
+    // AI Camera state
+    const [aiImagePreview, setAiImagePreview] = useState(null)
+    const [aiScanStatus, setAiScanStatus] = useState('idle') // idle | analyzing | success | error
+    const [aiScanResult, setAiScanResult] = useState(null)
+
     const initials = user?.name
         ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
         : '?'
@@ -109,25 +114,37 @@ export default function DietTracker() {
             })
 
             if (image.base64String) {
-                const aiResult = await analyzeFoodImage(image.base64String)
-                await logFood({
-                    meal_type: activeMeal,
-                    food_id: 'ai-' + Date.now(),
-                    food_name: '✨ ' + aiResult.name,
-                    serving: '1 serving (AI estimate)',
-                    quantity: 1,
-                    calories: aiResult.calories,
-                    protein_g: aiResult.protein_g,
-                    carbs_g: aiResult.carbs_g,
-                    fat_g: aiResult.fat_g,
-                })
+                // Show the photo overlay immediately
+                setAiImagePreview('data:image/jpeg;base64,' + image.base64String)
+                setAiScanStatus('analyzing')
+                setIsScanning(false) // Re-enable camera button underneath
+
+                try {
+                    const aiResult = await analyzeFoodImage(image.base64String)
+                    setAiScanResult({
+                        id: 'ai-' + Date.now(),
+                        name: '✨ ' + aiResult.name,
+                        emoji: '📸',
+                        category: 'AI Scan',
+                        serving: '1 serving (AI estimate)',
+                        calories: aiResult.calories,
+                        protein_g: aiResult.protein_g,
+                        carbs_g: aiResult.carbs_g,
+                        fat_g: aiResult.fat_g,
+                    })
+                    setAiScanStatus('success')
+                } catch (apiErr) {
+                    setAiScanStatus('error')
+                    setLogError('AI Scan failed: ' + (apiErr?.message || 'API Error.'))
+                }
+            } else {
+                setIsScanning(false)
             }
         } catch (err) {
-            if (err?.message !== 'User cancelled photos app') {
-                setLogError('AI Scan failed: ' + (err?.message || 'Check camera permissions / API key.'))
-            }
-        } finally {
             setIsScanning(false)
+            if (err?.message !== 'User cancelled photos app') {
+                setLogError('Camera error: ' + (err?.message || 'Check permissions.'))
+            }
         }
     }
 
@@ -322,6 +339,67 @@ export default function DietTracker() {
                                 {isLogging ? 'Adding…' : `Add to ${activeMeal}`}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── AI PHOTO OVERLAY ────────────────────────────────────── */}
+            {aiImagePreview && (
+                <div className="ai-overlay">
+                    <img src={aiImagePreview} className="ai-bg-img" alt="Scanned meal" />
+                    <div className="ai-bg-dimmer" />
+
+                    <div className="ai-modal-wrapper">
+                        {aiScanStatus === 'analyzing' && (
+                            <div className="ai-analyzing-box">
+                                <div className="ai-pulse-icon">🐼</div>
+                                <h3 className="ai-title">Panda AI is analyzing your meal...</h3>
+                                <p className="ai-subtitle">This usually takes a few seconds.</p>
+                            </div>
+                        )}
+
+                        {aiScanStatus === 'success' && aiScanResult && (
+                            <div className="ai-result-box">
+                                <p className="ai-subtitle">Panda AI identified:</p>
+                                <div className="ai-result-header">
+                                    <span className="ai-result-emoji">{aiScanResult.emoji}</span>
+                                    <h3 className="ai-title">{aiScanResult.name}</h3>
+                                </div>
+
+                                <div className="ai-result-macros">
+                                    <div className="ai-macro"><strong>{aiScanResult.calories}</strong> <small>kcal</small></div>
+                                    <div className="ai-macro"><strong>{aiScanResult.protein_g}g</strong> <small>Protein</small></div>
+                                    <div className="ai-macro"><strong>{aiScanResult.carbs_g}g</strong> <small>Carbs</small></div>
+                                    <div className="ai-macro"><strong>{aiScanResult.fat_g}g</strong> <small>Fat</small></div>
+                                </div>
+
+                                <div className="ai-result-actions">
+                                    <button className="ai-btn-secondary" onClick={() => {
+                                        setAiImagePreview(null)
+                                        setAiScanStatus('idle')
+                                    }}>Cancel</button>
+
+                                    <button className="ai-btn-primary" onClick={() => {
+                                        setAiImagePreview(null)
+                                        setAiScanStatus('idle')
+                                        openFoodPicker(aiScanResult)
+                                    }}>
+                                        Approve & Adjust
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {aiScanStatus === 'error' && (
+                            <div className="ai-error-box">
+                                <h3 className="ai-title">Scan Failed</h3>
+                                <p className="ai-subtitle">{logError}</p>
+                                <button className="ai-btn-secondary" onClick={() => {
+                                    setAiImagePreview(null)
+                                    setAiScanStatus('idle')
+                                }}>Close</button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
