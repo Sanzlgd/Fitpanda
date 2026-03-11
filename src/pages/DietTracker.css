@@ -405,7 +405,7 @@
 .qty-overlay {
     position: fixed;
     inset: 0;
-    z-index: 200;
+    z-index: 2500;
     background: rgba(0, 0, 0, .6);
     backdrop-filter: blur(6px);
     display: flex;
